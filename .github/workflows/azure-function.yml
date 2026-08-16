@@ -1,10 +1,13 @@
-#Deploy .NET Azure Function to Azure using GitHub Actions
 name: Deploy .NET Azure Function
 
 on:
   push:
     branches:
       - main
+
+permissions:
+  id-token: write
+  contents: read
 
 env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
@@ -15,26 +18,39 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # 1. Checkout source code
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      # 2. Setup .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      # 3. Restore NuGet dependencies
       - name: Restore dependencies
         run: dotnet restore
 
+      # 4. Build the application
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
+      # 5. Publish the Azure Function
       - name: Publish
         run: dotnet publish --configuration Release --output ./publish
 
+      # 6. Authenticate to Azure using GitHub OIDC
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # 7. Deploy to Azure Function App
       - name: Deploy to Azure Function App
         uses: Azure/functions-action@v1
         with:
           app-name: 'kbjupiter-myfirstfunction'
           package: './publish'
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
