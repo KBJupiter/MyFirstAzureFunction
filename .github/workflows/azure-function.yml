@@ -1,3 +1,4 @@
+#Deploy .NET Azure Function to Azure using GitHub Actions
 name: Deploy .NET Azure Function
 
 on:
